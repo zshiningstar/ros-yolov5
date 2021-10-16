@@ -1,0 +1,11 @@
+<!-- -->
+
+<launch>
+    <param name="image_topic" value="/usb_cam/image_raw" /> 
+    <node name="ego_camera" pkg="ros_yolo" type="ego_camera.py" output="screen" > 
+    </node> 
+    
+	<node pkg="ros_yolo" type="final_yolo.py" name="final_yolo" output="screen" >
+	</node>
+</launch> 
+
