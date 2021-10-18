@@ -3,10 +3,15 @@
 
 import roslib
 import rospy
+import string
 from std_msgs.msg import Header
 from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import Image
+#from后边是自己的包.msg，也就是自己包的msg文件夹下，test是我的msg文件名test.msg
+from ros_yolo.msg import Bbox2d
+from ros_yolo.msg import DetectResult
+
 IMAGE_WIDTH=1241
 IMAGE_HEIGHT=376
 
@@ -122,21 +127,31 @@ def detect(img):
             # Rescale boxes from img_size to im0 size
             det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
             # Print results
-            for c in det[:, -1].unique():
-                n = (det[:, -1] == c).sum()  # detections per class
-                s += '%g %ss, ' % (n, names[int(c)])  # add to string
                 # Write results
             for *xyxy, conf, cls in reversed(det):
                 if save_txt:  # Write to file
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                     line = (cls, conf, *xywh) if save_conf else (cls, *xywh)  # label format
+                    print("-----------------")
+                    print(float(conf))
+                    print("-----------------")
+                    print(int(cls))
+                    detect_result.id = int(cls)
+                    detect_result.confidence = float(conf)
                 if view_img:  # Add bbox to image
                     label = '%s %.2f' % (names[int(cls)], conf)
                     c1, c2 = (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3]))
                     print("-----------------")
                     print("左上点的坐标为：(" + str(c1[0]) + "," + str(c1[1]) + ")，右下点的坐标为(" + str(c2[0]) + "," + str(c2[1]) + ")")
-                    print("-----------------")
+                    detect_result.bbox.xyxy = xyxy
                     plot_one_box(xyxy, im0, label=label, color=[255,255,0], line_thickness=3)
+            for c in det[:, -1].unique():
+                n = (det[:, -1] == c).sum()  # detections per class
+                s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                print("-----------------")
+                print(names[int(c)])
+                detect_result.label = names[int(c)]
+                pub_result.publish(detect_result)
     time4 = time.time()
     print('************')
     print('2-1', time2 - time1)
@@ -190,6 +205,6 @@ if __name__ == '__main__':
     rospy.Subscriber(image_topic_1, Image, image_callback_1, queue_size=1, buff_size=52428800)
     image_topic_2 = rospy.get_param('result_topic', '/result_topic')
     image_pub = rospy.Publisher(image_topic_2, Image, queue_size=1)
-    #rospy.init_node("yolo_result_out_node", anonymous=True)
-
+    pub_result = rospy.Publisher('detect_result', DetectResult, queue_size=10) #定义话题
+    detect_result = DetectResult()
     rospy.spin()
