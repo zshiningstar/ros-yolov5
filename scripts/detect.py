@@ -8,13 +8,22 @@ Run inference on images, videos, directories, streams, etc.
 Usage:
     $ python path/to/detect.py --source path/to/img.jpg --weights yolov5s.pt --img 640
 """
+import roslib
+import rospy
+import string
+from std_msgs.msg import Header
+from std_msgs.msg import String
+from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
+from ros_yolo.msg import Bbox2d
+from ros_yolo.msg import DetectResult
 
-import argparse
 import sys
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 
-from pathlib import Path
 
+import argparse
+from pathlib import Path
 import cv2
 import numpy as np
 import torch
@@ -22,12 +31,8 @@ import torch.backends.cudnn as cudnn
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
-#print(sys.path)
-#print(ROOT)
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-#print(Path.cwd())
-#ROOT = ROOT.relative_to(Path.cwd())  # relative
 
 from models.experimental import attempt_load
 from utils.datasets import LoadImages, LoadStreams
@@ -36,7 +41,6 @@ from utils.general import apply_classifier, check_img_size, check_imshow, check_
     strip_optimizer, xyxy2xywh
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
-
 
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
@@ -64,7 +68,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
         ):
-    print(1111111111111111111111111111)
     source = str(source)
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -210,7 +213,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
@@ -218,7 +220,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
@@ -226,6 +227,12 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
+                    detect_result.label = names[int(c)]
+                    detect_result.id = c
+                    detect_result.confidence = float(conf)
+                    detect_result.bbox.xyxy = xyxy
+                    pub_result.publish(detect_result)
+                    print(detect_result)
             # Print time (inference-only)
             print(f'{s}Done. ({t3 - t2:.3f}s)')
 
@@ -268,4 +275,12 @@ def main():
     run()
 
 if __name__ == "__main__":
+    rospy.init_node('ros_yolo')
+#    image_topic_1 = rospy.get_param('image_topic', '/usb_cam')
+#    rospy.Subscriber(image_topic_1, Image, image_callback_1, queue_size=1, buff_size=52428800)
+    image_topic_2 = rospy.get_param('result_topic', '/result_topic')
+    image_pub = rospy.Publisher(image_topic_2, Image, queue_size=1)
+    pub_result = rospy.Publisher('detect_result', DetectResult, queue_size=10) #定义话题
+    detect_result = DetectResult()
+#    rospy.spin()
     main()
