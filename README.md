@@ -11,7 +11,7 @@
 roslaunch ros_yolo ego_cam_detect.launch
 ```
 
-#### 4 自定义msg消息
+#### 3 自定义msg消息
 
  - float32 confidence #置信度
  - Bbox2d bbox        #左上右下坐标位置
