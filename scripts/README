@@ -1,0 +1,46 @@
+### yolov5安装学习
+#### 1. conda安装
+* 1.下载地址:https://repo.anaconda.com/archive/
+* 2.安装
+'''
+sudo bash Anaconda3-XXX.sh -f -b -p  /指定目录
+添加环境变量
+export PATH=/home/用户名/anaconda3/bin:$PATH
+source ~/.bashrc
+查看版本,出现对应版本号即安装成功
+conda --version
+'''
+
+#### 2.下载源代码
+* 1.网址:https://github.com/ultralytics/yolov5/tree/v5.0 **直接下载v5.0版本的压缩包**
+
+#### 3.配置环境
+'''
+sudo chown -R username anaconda3    #username为自己的用户名
+conda create -n yolov5 python=3.7
+source activate
+conda activate yolov5
+
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+conda config --set show_channel_urls yes
+conda install pytorch torchvision cudatoolkit=10.1
+
+pip3 install -r requirements.txt
+'''
+#### 4.示例运行  
+'''
+export PYTHONPATH=/home/star/.local/lib/python3.7/site-packages
+python detect.py --source data/images --view-img --weights yolov5s.pt --conf 0.25
+'''
+
+#### 5.调用笔记本自带摄像头检测
+'''
+export PYTHONPATH=/home/star/.local/lib/python3.7/site-packages
+python detect.py --source 0
+'''
+
+#### 6.自动取消进入base环境
+'''
+conda config --set auto_activate_base false
+'''
