@@ -1,4 +1,3 @@
-参考:https://github.com/qianmin/yolov5_ROS
 ### 1 环境依赖
 - conda安装yolov5虚拟环境
    - 参考:
